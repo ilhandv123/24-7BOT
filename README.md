@@ -30,5 +30,5 @@ A simple Minecraft AFK bot that can join servers, stay active, and reconnect aut
 Open terminal / command prompt and run:
 
 ```bash id="clone1"
-git clone https://github.com/YOUR_USERNAME/ILHANBOT-AFK.git
+git clone [https://github.com/YOUR_USERNAME/ILHANBOT-AFK.git](https://github.com/ilhandv123/24-7BOT.git)
 cd ILHANBOT-AFK
