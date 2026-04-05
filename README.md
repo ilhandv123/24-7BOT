@@ -1,5 +1,4 @@
 
-```markdown
 # 🤖 ILHANBOT - Minecraft AFK Bot
 
 A powerful Minecraft bot with auto-reconnect, AFK movements, and smart username management.
