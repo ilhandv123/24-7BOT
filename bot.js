@@ -1,29 +1,5 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process')
-
-// 📦 Auto install function
-function ensurePackages() {
-  try {
-    require.resolve('mineflayer')
-    require.resolve('readline-sync')
-    require.resolve('chalk')
-  } catch (e) {
-    console.log('📦 Installing required packages...\n')
-    execSync('npm install mineflayer readline-sync chalk', { stdio: 'inherit' })
-    console.log('\n✅ Installation complete! Restarting...\n')
-
-    // Restart script
-    require('child_process').spawn(process.argv[0], process.argv.slice(1), {
-      stdio: 'inherit'
-    })
-    process.exit()
-  }
-}
-
-ensurePackages()
-
-// ✅ Now safe to require
 const mineflayer = require('mineflayer')
 const readline = require('readline-sync')
 const chalk = require('chalk')
@@ -41,34 +17,44 @@ function randomName() {
 // 🎨 Banner
 console.clear()
 console.log(chalk.green(`
-██████████████████████████████
-██████████████████████████████
-████░░░░░░░░░░░░░░░░░░░░░░▀███
-████░░▄▄▄▄▄▄▄░░░░▄▄▄▄▄▄▄▄░░███
-████░░███████░░░░████████░░███
-████░░████▀▀▀░░░░▀▀▀▀████░░███
-████░░████░░░░░░░░░░░░███░░███
-████░░████░░███████░░░███░░███
-████░░░░░░░░███████░░░░░░░░███
-████░░░░░░░░███████░░░░░░░░███
-████░░████░░███████░░░███░░███
-████░░████░░░░░░░░░░░░███░░███
-████░░████▄▄▄░░░░▄▄▄▄████░░███
-████░░███████░░░░████████░░███
-████░░▀▀▀▀▀▀▀░░░░▀▀▀▀▀▀▀▀░░███
-████░░░░░░░░░░░░░░░░░░░░░░▄███
-██████████████████████████████
-██████████████████████████████
+██╗██╗     ██╗  ██╗ █████╗ ███╗   ██╗██████╗  ██████╗ ████████╗
+██║██║     ██║  ██║██╔══██╗████╗  ██║██╔══██╗██╔═══██╗╚══██╔══╝
+██║██║     ███████║███████║██╔██╗ ██║██████╔╝██║   ██║   ██║   
+██║██║     ██╔══██║██╔══██║██║╚██╗██║██╔══██╗██║   ██║   ██║   
+██║███████╗██║  ██║██║  ██║██║ ╚████║██████╔╝╚██████╔╝   ██║   
+╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝    ╚═╝
 `))
 
-console.log(chalk.cyan('🤖 ILHANBOT AFK SYSTEM\n'))
+console.log(chalk.cyan('🤖 ILHANBOT AFK SYSTEM'))
+console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+
+// 📋 FEATURES BOARD
+console.log(chalk.yellow('📋 FEATURES:\n'))
+console.log('• Auto Join Server')
+console.log('• Auto Reconnect (20s)')
+console.log('• AFK Move / Jump / Rotate')
+console.log('• Random Chat Messages')
+console.log('• Auto Restart (1 Hour)')
+console.log('• Change Username ONLY on Ban')
+console.log('• Auto Retry when Server OFF')
+
+console.log(chalk.gray('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+
+// 🔴 Social
+console.log(
+  chalk.bgRed.white.bold(' 📸 Instagram: ilhan.pk ') + ' ' +
+  chalk.bgRed.white.bold(' ▶ YouTube: OxViper ')
+)
+
+console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'))
 
 // 📥 Input
 const ip = readline.question('🌐 Server IP: ')
 const port = parseInt(readline.question('🔌 Port: '))
 let username = readline.question('👤 Bot Name (default ILHANBOT): ') || 'ILHANBOT'
 
-console.log(chalk.blue(`\n📡 Connecting to ${ip}:${port} as ${username}\n`))
+console.log(chalk.gray('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+console.log(chalk.blue(`📡 Connecting to ${ip}:${port} as ${username}\n`))
 
 startBot(ip, port, username)
 
@@ -97,12 +83,13 @@ function startBot(ip, port, username) {
       // 💬 Chat loop
       const messages = ['ok', 'hello', 'hai', 'anyone here?', 'lets play']
       function chatLoop() {
+        const delay = (Math.random() * (6 - 5) + 5) * 60 * 1000
         setTimeout(() => {
           const msg = messages[Math.floor(Math.random() * messages.length)]
           bot.chat(msg)
           console.log(chalk.magenta(`💬 ${msg}`))
           chatLoop()
-        }, 5 * 60 * 1000)
+        }, delay)
       }
       chatLoop()
 
@@ -110,32 +97,67 @@ function startBot(ip, port, username) {
       setInterval(() => {
         bot.setControlState('jump', true)
         setTimeout(() => bot.setControlState('jump', false), 800)
+        console.log(chalk.yellow('🦘 Jump'))
       }, 3 * 60 * 1000)
 
       // 🚶 Move
       setInterval(() => {
         bot.setControlState('forward', true)
         setTimeout(() => bot.setControlState('forward', false), 3000)
+        console.log(chalk.cyan('🚶 Move'))
       }, 4 * 60 * 1000)
 
-      // 🔁 Restart
+      // 🔄 Rotate
+      setInterval(() => {
+        let yaw = bot.entity.yaw
+        let steps = 20
+        let step = 0
+
+        const rotate = setInterval(() => {
+          yaw += (Math.PI * 2) / steps
+          bot.look(yaw, bot.entity.pitch, true)
+          step++
+          if (step >= steps) clearInterval(rotate)
+        }, 200)
+
+        console.log(chalk.blue('🔄 Rotate'))
+      }, 5 * 60 * 1000)
+
+      // 🔁 Restart after 1 hour (NO username change)
       setTimeout(() => {
-        console.log('🔁 Restarting...')
+        console.log(chalk.red('\n🔁 Restarting bot...\n'))
         isRestarting = true
         bot.quit()
       }, 60 * 60 * 1000)
     })
 
-    bot.on('kicked', () => wasKicked = true)
+    // 🚫 Detect kick
+    bot.on('kicked', (reason) => {
+      wasKicked = true
+      console.log(chalk.red(`🚫 Kicked: ${reason}`))
+    })
 
+    // ⚠️ Error (server offline etc.)
+    bot.on('error', (err) => {
+      if (!connected) {
+        console.log(chalk.red('⚠️ Server offline... retrying'))
+      } else {
+        console.log(chalk.red(err.message))
+      }
+    })
+
+    // 🔄 Reconnect logic
     bot.on('end', () => {
-      console.log('🔁 Reconnecting in 20s...')
+      console.log(chalk.yellow('🔁 Reconnecting in 20s...\n'))
 
       if (wasKicked && !isRestarting) {
         username = randomName()
-        console.log(`🔄 New username: ${username}`)
+        console.log(chalk.gray(`🔄 New Username: ${username}`))
+      } else {
+        console.log(chalk.blue(`🔁 Rejoining with same username: ${username}`))
       }
 
+      // reset flags
       wasKicked = false
       isRestarting = false
 
