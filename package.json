@@ -1,0 +1,14 @@
+{
+  "name": "ilhanbot-afk",
+  "version": "1.0.0",
+  "description": "Minecraft AFK bot with auto reconnect and anti-ban system",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.20.0",
+    "readline-sync": "^1.4.10",
+    "chalk": "^4.1.2"
+  }
+}
