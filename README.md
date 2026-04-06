@@ -75,7 +75,7 @@ You should see version numbers like `v18.x.x` ✅
 
 ```bash
 cd $HOME
-git clone https://github.com/your-repo/ilhanbot.git
+git clone https://github.com/ilhandv123/24-7BOT.git
 cd ilhanbot
 ```
 
