@@ -3,7 +3,6 @@
 const mineflayer = require('mineflayer')
 const readline = require('readline-sync')
 const chalk = require('chalk')
-const { GoogleGenerativeAI } = require('@google/generative-ai')
 
 // 🎲 Random username generator
 function randomName() {
@@ -26,39 +25,35 @@ console.log(chalk.green(`
 ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝    ╚═╝
 `))
 
-console.log(chalk.cyan('🤖 ILHANBOT AFK + AI SYSTEM'))
+console.log(chalk.cyan('🤖 ILHANBOT AFK SYSTEM'))
 console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
 
+// 📋 FEATURES BOARD
 console.log(chalk.yellow('📋 FEATURES:\n'))
 console.log('• Auto Join Server')
 console.log('• Auto Reconnect (20s)')
 console.log('• AFK Move / Jump / Rotate')
 console.log('• Random Chat Messages')
-console.log('• Gemini AI (.command only)')
 console.log('• Auto Restart (1 Hour)')
 console.log('• Change Username ONLY on Ban')
+console.log('• Auto Retry when Server OFF')
 
 console.log(chalk.gray('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+
+// 🔴 Social
+console.log(
+  chalk.bgRed.white.bold(' 📸 Instagram: ilhan.pk ') + ' ' +
+  chalk.bgRed.white.bold(' ▶ YouTube: OxViper ')
+)
+
+console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'))
 
 // 📥 Input
 const ip = readline.question('🌐 Server IP: ')
 const port = parseInt(readline.question('🔌 Port: '))
 let username = readline.question('👤 Bot Name (default ILHANBOT): ') || 'ILHANBOT'
 
-// 🔑 Optional API key
-const apiKey = readline.question('🤖 Gemini API Key (optional): ')
-
-// 🤖 Setup AI (optional)
-let model = null
-if (apiKey) {
-  const genAI = new GoogleGenerativeAI(apiKey)
-  model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-  console.log('🤖 AI Enabled\n')
-} else {
-  console.log('⚠️ AI Disabled (no API key)\n')
-}
-
-console.log(chalk.gray('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
+console.log(chalk.gray('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'))
 console.log(chalk.blue(`📡 Connecting to ${ip}:${port} as ${username}\n`))
 
 startBot(ip, port, username)
@@ -81,30 +76,18 @@ function startBot(ip, port, username) {
     let wasKicked = false
     let isRestarting = false
 
-    // 📊 Counters
-    let jumpCount = 0
-    let moveCount = 0
-    let rotateCount = 0
-
-    function updateStats() {
-      process.stdout.write(
-        `\r🦘 Jump: ${jumpCount} | 🚶 Move: ${moveCount} | 🔄 Rotate: ${rotateCount}`
-      )
-    }
-
     bot.on('spawn', () => {
       connected = true
-      console.log(chalk.green(`\n✅ Joined as ${username}\n`))
+      console.log(chalk.green(`✅ Joined as ${username}\n`))
 
-      // 💬 Auto chat loop
+      // 💬 Chat loop
       const messages = ['ok', 'hello', 'hai', 'anyone here?', 'lets play']
       function chatLoop() {
         const delay = (Math.random() * (6 - 5) + 5) * 60 * 1000
         setTimeout(() => {
           const msg = messages[Math.floor(Math.random() * messages.length)]
           bot.chat(msg)
-          console.log(chalk.magenta(`\n💬 ${msg}`))
-          updateStats()
+          console.log(chalk.magenta(`💬 ${msg}`))
           chatLoop()
         }, delay)
       }
@@ -114,16 +97,14 @@ function startBot(ip, port, username) {
       setInterval(() => {
         bot.setControlState('jump', true)
         setTimeout(() => bot.setControlState('jump', false), 800)
-        jumpCount++
-        updateStats()
+        console.log(chalk.yellow('🦘 Jump'))
       }, 3 * 60 * 1000)
 
       // 🚶 Move
       setInterval(() => {
         bot.setControlState('forward', true)
         setTimeout(() => bot.setControlState('forward', false), 3000)
-        moveCount++
-        updateStats()
+        console.log(chalk.cyan('🚶 Move'))
       }, 4 * 60 * 1000)
 
       // 🔄 Rotate
@@ -139,62 +120,35 @@ function startBot(ip, port, username) {
           if (step >= steps) clearInterval(rotate)
         }, 200)
 
-        rotateCount++
-        updateStats()
+        console.log(chalk.blue('🔄 Rotate'))
       }, 5 * 60 * 1000)
 
-      // 🔁 Restart after 1 hour
+      // 🔁 Restart after 1 hour (NO username change)
       setTimeout(() => {
-        console.log(chalk.red('\n\n🔁 Restarting bot...\n'))
+        console.log(chalk.red('\n🔁 Restarting bot...\n'))
         isRestarting = true
         bot.quit()
       }, 60 * 60 * 1000)
     })
 
-    // 🤖 AI Chat (.only)
-    bot.on('chat', async (player, message) => {
-      if (player === bot.username) return
-      if (!message.startsWith('.')) return
-      if (!model) return
-
-      const prompt = message.slice(1).trim()
-      if (!prompt) return
-
-      try {
-        const result = await model.generateContent(prompt)
-        let reply = result.response.text()
-
-        reply = reply.replace(/\n/g, ' ').substring(0, 100)
-
-        setTimeout(() => {
-          bot.chat(reply)
-          console.log(`\n🤖 AI: ${reply}`)
-          updateStats()
-        }, 2000)
-
-      } catch (err) {
-        console.log('\nAI Error:', err.message)
-      }
-    })
-
     // 🚫 Detect kick
     bot.on('kicked', (reason) => {
       wasKicked = true
-      console.log(chalk.red(`\n🚫 Kicked: ${reason}`))
+      console.log(chalk.red(`🚫 Kicked: ${reason}`))
     })
 
-    // ⚠️ Error
+    // ⚠️ Error (server offline etc.)
     bot.on('error', (err) => {
       if (!connected) {
-        console.log(chalk.red('\n⚠️ Server offline... retrying'))
+        console.log(chalk.red('⚠️ Server offline... retrying'))
       } else {
-        console.log(chalk.red(`\n${err.message}`))
+        console.log(chalk.red(err.message))
       }
     })
 
-    // 🔄 Reconnect
+    // 🔄 Reconnect logic
     bot.on('end', () => {
-      console.log(chalk.yellow('\n🔁 Reconnecting in 20s...\n'))
+      console.log(chalk.yellow('🔁 Reconnecting in 20s...\n'))
 
       if (wasKicked && !isRestarting) {
         username = randomName()
@@ -203,6 +157,7 @@ function startBot(ip, port, username) {
         console.log(chalk.blue(`🔁 Rejoining with same username: ${username}`))
       }
 
+      // reset flags
       wasKicked = false
       isRestarting = false
 
@@ -211,4 +166,4 @@ function startBot(ip, port, username) {
   }
 
   createBot()
-            }
+                            }
