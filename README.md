@@ -94,7 +94,7 @@ This takes 1-2 minutes. ⏳
 ### Step 6️⃣: Run the Bot! 🚀
 
 ```bash
-node index.js
+node bot.js
 ```
 
 The bot will ask you questions:
