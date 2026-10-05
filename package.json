@@ -1,14 +1,201 @@
-{
-  "name": "ilhanbot-afk",
-  "version": "1.0.0",
-  "description": "Minecraft AFK bot with auto reconnect and anti-ban system",
-  "main": "bot.js",
-  "scripts": {
-    "start": "node bot.js"
-  },
-  "dependencies": {
-    "mineflayer": "^4.20.0",
-    "readline-sync": "^1.4.10",
-    "chalk": "^4.1.2"
+#!/usr/bin/env node
+
+const mineflayer = require('mineflayer');
+const readline = require('readline-sync');
+
+function normalizeValue(value, fallback) {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
   }
+  return value;
 }
+
+function randomName(prefix = 'ILHANBOT') {
+  const chars = 'abcdefghijklmnopqrstuvwxyz';
+  let suffix = '';
+
+  for (let i = 0; i < 5; i += 1) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return `${prefix}_${suffix}`;
+}
+
+function buildConfig() {
+  const host = normalizeValue(readline.question('Server IP: '), 'play.example.com');
+  const portRaw = normalizeValue(readline.question('Port (default 25565): '), '25565');
+  const port = Number.parseInt(portRaw, 10);
+  const username = normalizeValue(readline.question('Bot name (default ILHANBOT): '), 'ILHANBOT');
+  const versionInput = normalizeValue(readline.question('Minecraft version (press enter for 1.21.11): '), '1.21.11');
+
+  return {
+    host,
+    port: Number.isFinite(port) ? port : 25565,
+    username,
+    version: versionInput,
+    reconnectDelayMs: 20000,
+    messageIntervalMs: 300000,
+    jumpIntervalMs: 180000,
+    moveIntervalMs: 240000,
+    restartDelayMs: 60 * 60 * 1000,
+    enableRestartCycle: true,
+    usernamePrefix: 'ILHANBOT',
+  };
+}
+
+function createBot(config) {
+  const bot = mineflayer.createBot({
+    host: config.host,
+    port: config.port,
+    username: config.username,
+    version: config.version,
+    auth: 'offline',
+    skipValidation: false,
+  });
+
+  let reconnectTimer = null;
+  let actionTimers = [];
+  let lastChatAt = 0;
+  let wasKicked = false;
+  let isRestarting = false;
+
+  function clearActionTimers() {
+    for (const timer of actionTimers) {
+      clearInterval(timer);
+    }
+    actionTimers = [];
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+    }
+
+    reconnectTimer = setTimeout(() => {
+      if (isRestarting) {
+        return;
+      }
+
+      if (wasKicked) {
+        config.username = randomName(config.usernamePrefix);
+        console.log(`[bot] Kick detected. Reconnecting with new username: ${config.username}`);
+      } else {
+        console.log(`[bot] Reconnecting with username: ${config.username}`);
+      }
+
+      wasKicked = false;
+      isRestarting = false;
+      createBot(config);
+    }, config.reconnectDelayMs);
+  }
+
+  function setLoop(callback, delay) {
+    const timer = setInterval(callback, delay);
+    actionTimers.push(timer);
+    return timer;
+  }
+
+  function startAfkBehavior() {
+    const messages = ['hello', 'hi', 'anyone here?', 'lets play', 'ok', 'hey'];
+
+    setLoop(() => {
+      const now = Date.now();
+      if (now - lastChatAt >= config.messageIntervalMs || lastChatAt === 0) {
+        const message = messages[Math.floor(Math.random() * messages.length)];
+        try {
+          bot.chat(message);
+          console.log(`[bot] Chat: ${message}`);
+          lastChatAt = now;
+        } catch (error) {
+          console.log(`[bot] Chat error: ${error.message}`);
+        }
+      }
+    }, config.messageIntervalMs);
+
+    setLoop(() => {
+      try {
+        bot.setControlState('jump', true);
+        setTimeout(() => bot.setControlState('jump', false), 600);
+        console.log('[bot] Jump action');
+      } catch (error) {
+        console.log(`[bot] Jump error: ${error.message}`);
+      }
+    }, config.jumpIntervalMs);
+
+    setLoop(() => {
+      try {
+        const entity = bot.entity;
+        if (!entity) {
+          return;
+        }
+
+        const yaw = entity.yaw || 0;
+        const pitch = entity.pitch || 0;
+        const nextYaw = yaw + (Math.PI * 2) / 10;
+
+        bot.look(nextYaw, pitch, true);
+        bot.setControlState('forward', true);
+        setTimeout(() => bot.setControlState('forward', false), 2500);
+        console.log('[bot] Movement action');
+      } catch (error) {
+        console.log(`[bot] Movement error: ${error.message}`);
+      }
+    }, config.moveIntervalMs);
+
+    if (config.restartDelayMs) {
+      setTimeout(() => {
+        console.log('[bot] Restart timer reached');
+        isRestarting = true;
+        bot.quit();
+      }, config.restartDelayMs);
+    }
+  }
+
+  bot.on('spawn', () => {
+    console.log(`[bot] Connected as ${config.username} on ${config.host}:${config.port}`);
+    startAfkBehavior();
+  });
+
+  bot.on('kicked', (reason) => {
+    wasKicked = true;
+    console.log(`[bot] Kicked: ${reason || 'unknown reason'}`);
+  });
+
+  bot.on('error', (error) => {
+    if (error && error.message) {
+      console.log(`[bot] Error: ${error.message}`);
+    }
+  });
+
+  bot.on('end', () => {
+    clearActionTimers();
+    console.log(`[bot] Connection closed. Reconnecting in ${Math.round(config.reconnectDelayMs / 1000)}s...`);
+    scheduleReconnect();
+  });
+
+  return bot;
+}
+
+function run() {
+  console.log('Minecraft AFK bot');
+  console.log('------------------');
+
+  const config = buildConfig();
+  console.log(`[bot] Using Minecraft version: ${config.version}`);
+  console.log(`[bot] Connecting to ${config.host}:${config.port} as ${config.username}`);
+
+  createBot(config);
+}
+
+run();
+
+process.on('uncaughtException', (error) => {
+  console.error('[fatal] Uncaught exception:', error.message);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[fatal] Unhandled rejection:', reason);
+  process.exit(1);
+});
+
