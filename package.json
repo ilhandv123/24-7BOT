@@ -1,14 +1,124 @@
-{
-  "name": "ilhanbot-afk",
-  "version": "1.0.0",
-  "description": "Minecraft AFK bot with auto reconnect and anti-ban system",
-  "main": "bot.js",
-  "scripts": {
-    "start": "node bot.js"
-  },
-  "dependencies": {
-    "mineflayer": "^4.20.0",
-    "readline-sync": "^1.4.10",
-    "chalk": "^4.1.2"
-  }
-}
+# 24-7BOT
+
+A simple Minecraft AFK bot for Java Edition servers. It can stay connected, move around to avoid inactivity kicks, send occasional chat messages, reconnect automatically, and keep running for long periods.
+
+This version is designed to be easier to understand, easier to configure, and easier to run on Termux or Linux.
+
+## Features
+
+- Auto-connect to a server
+- Reconnect after disconnects or kicks
+- AFK movement and jump loops
+- Random chat messages to appear active
+- Configurable timing through environment variables
+- Friendly setup for beginners
+- Cleaner, more maintainable code base
+
+## Requirements
+
+- Node.js 18 or newer
+- Internet access
+- A Minecraft Java Edition server
+- A valid server IP and port
+
+## Installation
+
+### Linux
+
+```bash
+sudo apt update
+sudo apt install -y nodejs npm git
+
+git clone https://github.com/ilhandv123/24-7BOT.git
+cd 24-7BOT
+npm install
+```
+
+### Termux (Android)
+
+```bash
+pkg update
+pkg upgrade -y
+pkg install -y nodejs git
+
+git clone https://github.com/ilhandv123/24-7BOT.git
+cd 24-7BOT
+npm install
+```
+
+## Configuration
+
+Copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+Then open `.env` and edit the values:
+
+```env
+MC_HOST=play.example.com
+MC_PORT=25565
+MC_USERNAME=ILHANBOT
+MC_VERSION=1.21.11
+RECONNECT_DELAY_MS=20000
+CHAT_INTERVAL_MS=300000
+JUMP_INTERVAL_MS=180000
+MOVE_INTERVAL_MS=240000
+RESTART_DELAY_MS=3600000
+USERNAME_PREFIX=ILHANBOT
+```
+
+## Run the bot
+
+```bash
+npm start
+```
+
+If you do not want to use `.env`, you can also edit values directly in `bot.js` before running it.
+
+## Important notes
+
+- Use a valid server address and port.
+- For Java Edition servers, use the server IP and port exactly as required by the server.
+- Keep the bot name valid. It should not contain spaces if your server rejects them.
+- Sometimes a server will kick a bot for suspicious activity. The bot will reconnect automatically.
+
+## Troubleshooting
+
+### The bot does not connect
+
+- Check the server IP and port.
+- Make sure the server is online.
+- Confirm the server is Java Edition and not Bedrock.
+
+### Bot gets kicked
+
+- Check if the server has anti-cheat or anti-bot rules.
+- Use a different username.
+- Increase your reconnect delay if needed.
+
+### Termux stops after some time
+
+- Use a background process manager such as `nohup`, `screen`, or `tmux`.
+- Example:
+
+```bash
+nohup npm start > bot.log 2>&1 &
+```
+
+## Beginner quick start
+
+```bash
+git clone https://github.com/ilhandv123/24-7BOT.git
+cd 24-7BOT
+npm install
+cp .env.example .env
+nano .env
+npm start
+```
+
+## License
+
+This project is provided as-is for learning and personal use.
+
